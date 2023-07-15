@@ -1,3 +1,4 @@
+import WebSocket from "ws";
 export enum WSSCmd {
   // Player
   reg = 'reg',
@@ -17,8 +18,29 @@ export enum WSSCmd {
   finish = 'finish',
 };
 
+export interface WebSocket2 extends WebSocket{
+  userId: number;
+}
 export interface WSSMessage {
 	type: WSSCmd,
 	data: string,
 	id: number, // always 0
 }
+
+export type Client = {
+  [key: number] : WebSocket2 | undefined,
+  }
+
+export interface User {
+  index: number;
+  name: string;
+  password?: string;
+  error?: boolean;
+  errorText?: string;
+}
+
+export interface Room {
+  roomId: number,
+  roomUsers: {index:number, name: string}[]
+}
+
