@@ -41,6 +41,6 @@ export interface User {
 
 export interface Room {
   roomId: number,
-  roomUsers: {index:number, name: string}[]
+  roomUsers: User[],
 }
 

@@ -1,8 +1,10 @@
-import { User, Client, WSSCmd, WSSMessage, WebSocket2 } from "./types.js";
+import { RoomsDB } from "./roomsdb.js";
+import { User, Client, WSSCmd, WSSMessage, WebSocket2, Room } from "./types.js";
 import { UsersDB } from "./usersdb.js";
 
 const clients: Client = {};
 const users = new UsersDB();
+const rooms = new RoomsDB();
 
 
 const handleCmd = (message: WSSMessage,wsc: WebSocket2): WSSMessage => {
@@ -24,6 +26,14 @@ const handleCmd = (message: WSSMessage,wsc: WebSocket2): WSSMessage => {
             }
             data = JSON.stringify(newUser);
             break;
+        }
+        case WSSCmd.create_room: {
+            const currentUser = users.getById(wsc.userId);
+            rooms.create(currentUser.index, currentUser.name);
+            const roomsSingle: Room[] = rooms.listRoomsSingleUser();
+            
+            type = WSSCmd.update_room;
+            data = JSON.stringify(roomsSingle); 
         }
     }
     const response: WSSMessage = {type, data, id:0}
