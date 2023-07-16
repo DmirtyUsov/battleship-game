@@ -19,7 +19,8 @@ export enum WSSCmd {
 };
 
 export interface WebSocket2 extends WebSocket{
-  userId: number;
+  userId: number,
+  userRoomId: number,
 }
 export interface WSSMessage {
 	type: WSSCmd,
@@ -44,3 +45,26 @@ export interface Room {
   roomUsers: User[],
 }
 
+export interface Game {
+  gameId: number,
+  room: Room;
+}
+enum ShipSize {
+  small = "small",
+  medium = "medium",
+  large = "large",
+  huge = "huge"
+}
+
+export interface Position {
+  x: number,
+  y: number
+}
+
+export interface Ship {
+  position: Position,
+  direction: boolean,
+  length: number,
+  type: ShipSize
+
+}

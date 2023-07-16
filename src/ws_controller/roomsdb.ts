@@ -1,4 +1,4 @@
-import { Room } from './types';
+import { Room, User } from './types';
 
 const START_INDEX = 1;
 type dbRooms = { [id: number]: Room };
@@ -26,6 +26,18 @@ export class RoomsDB {
 
     listRoomsSingleUser():Room[] {
         const roomsArr = Object.values(this.rooms);
-        return roomsArr.filter((item) => item.roomUsers.length === 1)
+        return roomsArr.filter((item) => {
+            if(item) {
+                return item.roomUsers.length === 1;
+            }
+        })
+    }
+
+    addToRoom(roomIdTo: number, roomIdFrom: number) {
+        const newUser = this.rooms[roomIdFrom].roomUsers.pop();
+        if(newUser) { 
+            this.rooms[roomIdTo].roomUsers.push((newUser))
+            delete this.rooms[roomIdFrom];
+        }
     }
 }

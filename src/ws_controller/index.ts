@@ -28,12 +28,28 @@ const handleCmd = (message: WSSMessage,wsc: WebSocket2): WSSMessage => {
             break;
         }
         case WSSCmd.create_room: {
-            const currentUser = users.getById(wsc.userId);
-            rooms.create(currentUser.index, currentUser.name);
+            if(!wsc.userRoomId) { // one room per user?
+                const currentUser = users.getById(wsc.userId);
+                const newRoom = rooms.create(currentUser.index, currentUser.name);
+                wsc.userRoomId = newRoom.roomId;
+            }
             const roomsSingle: Room[] = rooms.listRoomsSingleUser();
             
             type = WSSCmd.update_room;
             data = JSON.stringify(roomsSingle); 
+            break;
+        }
+
+        case WSSCmd.add_user_to_room: {
+            if(payload.indexRoom !== wsc.userRoomId) {
+                rooms.addToRoom(payload.indexRoom, wsc.userRoomId);
+            }
+            const roomsSingle: Room[] = rooms.listRoomsSingleUser();
+
+            type = WSSCmd.update_room;
+            data = JSON.stringify(roomsSingle); 
+            break;
+
         }
     }
     const response: WSSMessage = {type, data, id:0}
@@ -51,8 +67,21 @@ export const controlWSConnection = (wsc: WebSocket2) => {
         const messageIn: WSSMessage = JSON.parse(data.toString());
         console.log('Message from client', messageIn);
         const messageOut = handleCmd(messageIn, wsc);
+        const messateOutTxt = JSON.stringify(messageOut);
         console.log('Message to Client', messageOut);
-        wsc.send(JSON.stringify(messageOut));
+        switch(messageOut.type) {
+            case WSSCmd.update_room: {
+                Object.values(clients).forEach((connestion) => {
+                    if(connestion) {
+                        connestion.send(messateOutTxt);
+                    }
+                })
+                break;
+            }
+            default: {
+                wsc.send(messateOutTxt);
+            }
+        }
     });
 
     wsc.on('close', () => {
