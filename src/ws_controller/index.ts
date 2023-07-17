@@ -1,3 +1,4 @@
+import { GamesDB } from "./gamesdb.js";
 import { RoomsDB } from "./roomsdb.js";
 import { User, Client, WSSCmd, WSSMessage, WebSocket2, Room } from "./types.js";
 import { UsersDB } from "./usersdb.js";
@@ -10,6 +11,7 @@ interface WSSResponse {
 const clients: Client = {};
 const users = new UsersDB();
 const rooms = new RoomsDB();
+const games = new GamesDB();
 
 
 const handleCmd = (message: WSSMessage, wsc: WebSocket2): WSSResponse[] => {
@@ -54,14 +56,50 @@ const handleCmd = (message: WSSMessage, wsc: WebSocket2): WSSResponse[] => {
     }
 
     case WSSCmd.add_user_to_room: {
-      if (payload.indexRoom !== wsc.userRoomId) {
-        rooms.addToRoom(payload.indexRoom, wsc.userRoomId);
-      }
-      const roomsSingle: Room[] = rooms.listRoomsSingleUser();
+        if (payload.indexRoom !== wsc.userRoomId) {
+            const room =  rooms.addToRoom(payload.indexRoom, wsc.userRoomId);
+            wsc.userRoomId = payload.indexRoom;
+            const newGame = games.create(room);
+            const roomsSingle: Room[] = rooms.listRoomsSingleUser();
 
-      type = WSSCmd.update_room;
-      data = JSON.stringify(roomsSingle);
-      break;
+            Object.values(clients).forEach((connection) => {
+                if (connection) {
+                    if(connection.userRoomId === payload.indexRoom) {
+                        type = WSSCmd.create_game;
+                        data = JSON.stringify({idGame: newGame.index, idPlayer: connection.userId});
+                        responses.push({ connection, message: { type, data, id: 0 } });
+                    } else {
+                        type = WSSCmd.update_room;
+                        data = JSON.stringify(roomsSingle);
+                        responses.push({ connection, message: { type, data, id: 0 } });
+                    }
+                }
+            });
+        }
+        break;
+    }
+
+    case WSSCmd.add_ships: {
+        games.addShips(payload.gameId, payload.indexPlayer, payload.ships);
+        if(games.isBothShips(payload.gameId)) {
+            const game = games.getGameById(payload.gameId);
+            const users = game.room.roomUsers;
+            users.forEach((user) => {
+                type = WSSCmd.start_game;
+                data = JSON.stringify({
+                  ships: game[user.index],
+                  currentPlayerIndex: user.index
+                });
+                const connection = clients[user.index]
+                if (connection) {
+                  responses.push({
+                    connection: connection,
+                    message: { type, data, id: 0 },
+                  });
+                }
+            })
+        }
+        break;
     }
   }
   return responses;

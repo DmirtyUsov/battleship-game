@@ -13,7 +13,24 @@ export class GamesDB {
   private games: dbGames = {};
   private index: number = START_INDEX;
 
-  create() {
-    
+  create(forRoom: Room): Game {
+    //TODO check existing games for room
+    const newGame: Game = {index: this.index++, room: forRoom};
+    this.games[newGame.index] = newGame;
+    return newGame;
+  }
+
+  getGameById(gameId:number): Game {
+    return this.games[gameId];
+  }
+
+  addShips(gameId: number, indexPlayer: number, ships:Ship[]) {
+    const game = this.getGameById(gameId);
+    game[indexPlayer] = ships;
+  }
+
+  isBothShips(gameId:number): boolean {
+    const game = this.getGameById(gameId);
+    return Object.keys(game).length === 4
   }
 }

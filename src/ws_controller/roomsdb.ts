@@ -33,11 +33,12 @@ export class RoomsDB {
         })
     }
 
-    addToRoom(roomIdTo: number, roomIdFrom: number) {
+    addToRoom(roomIdTo: number, roomIdFrom: number): Room {
         const newUser = this.rooms[roomIdFrom].roomUsers.pop();
         if(newUser) { 
             this.rooms[roomIdTo].roomUsers.push((newUser))
             delete this.rooms[roomIdFrom];
         }
+        return this.rooms[roomIdTo];
     }
 }
